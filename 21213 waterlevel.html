@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>APCS o711 裝飲料 - 互動模擬器</title>
+    <style>
+        body { font-family: sans-serif; line-height: 1.6; max-width: 800px; margin: 20px auto; padding: 0 20px; background-color: #f4f4f9; }
+        h1 { color: #2c3e50; text-align: center; }
+        .config-section { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .input-group { margin-bottom: 10px; }
+        label { display: inline-block; width: 180px; font-weight: bold; }
+        input { padding: 5px; width: 80px; border: 1px solid #ccc; border-radius: 4px; }
+        button { background-color: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-size: 16px; width: 100%; margin-top: 10px; }
+        button:hover { background-color: #2980b9; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: center; }
+        th { background-color: #ecf0f1; }
+        .highlight { color: #e74c3c; font-weight: bold; font-size: 1.2em; }
+        .result-box { background: #e8f6f3; padding: 15px; border-left: 5px solid #27ae60; margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+    <h1>o711 裝飲料 互動模擬</h1>
+    
+    <div class="config-section">
+        <div class="input-group">
+            <label>倒水次數 (n):</label>
+            <input type="number" id="n" value="3" min="1" max="10">
+        </div>
+        <div class="input-group">
+            <label>下層寬 (w1):</label>
+            <input type="number" id="w1" value="5" min="1"> cm
+        </div>
+        <div class="input-group">
+            <label>下層高 (h1):</label>
+            <input type="number" id="h1" value="10" min="1"> cm
+        </div>
+        <div class="input-group">
+            <label>上層寬 (w2):</label>
+            <input type="number" id="w2" value="2" min="1"> cm
+        </div>
+        <div class="input-group">
+            <label>上層高 (h2):</label>
+            <input type="number" id="h2" value="10" min="1"> cm
+        </div>
+        <div class="input-group">
+            <label>每次倒水量 (空白隔開):</label>
+            <input type="text" id="v_list" value="50 150 200" style="width: 250px;"> cm³
+        </div>
+        <button onclick="simulate()">開始模擬計算</button>
+    </div>
+
+    <div id="outputArea" style="display:none;">
+        <div class="result-box">
+            最終答案（最大上升量）：<span id="finalResult" class="highlight">0</span> cm
+        </div>
+        
+        <table id="resultTable">
+            <thead>
+                <tr>
+                    <th>第幾次倒水</th>
+                    <th>倒入體積</th>
+                    <th>總體積</th>
+                    <th>新水位高度</th>
+                    <th>水位上升量</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+    </div>
+
+    <script>
+        function simulate() {
+            const n = parseInt(document.getElementById('n').value);
+            const w1 = parseInt(document.getElementById('w1').value);
+            const h1 = parseInt(document.getElementById('h1').value);
+            const w2 = parseInt(document.getElementById('w2').value);
+            const h2 = parseInt(document.getElementById('h2').value);
+            const v_input = document.getElementById('v_list').value.trim().split(/\s+/).map(Number);
+
+            const area1 = w1 * w1;
+            const area2 = w2 * w2;
+            const max_v1 = area1 * h1;
+            const max_v_total = max_v1 + (area2 * h2);
+
+            let current_v = 0;
+            let current_h = 0;
+            let max_increment = 0;
+            
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+
+            for (let i = 0; i < n; i++) {
+                let v = v_input[i] || 0;
+                let old_h = current_h;
+                
+                // 計算新體積 (不得超過總容量)
+                current_v = Math.min(current_v + v, max_v_total);
+                
+                // 計算新高度
+                let new_h;
+                if (current_v <= max_v1) {
+                    new_h = Math.floor(current_v / area1);
+                } else {
+                    new_h = h1 + Math.floor((current_v - max_v1) / area2);
+                }
+                
+                let increment = new_h - old_h;
+                if (increment > max_increment) max_increment = increment;
+                
+                // 更新狀態
+                current_h = new_h;
+
+                // 渲染表格
+                const row = `<tr>
+                    <td>${i + 1}</td>
+                    <td>${v}</td>
+                    <td>${current_v}</td>
+                    <td>${new_h}</td>
+                    <td>${increment}</td>
+                </tr>`;
+                tbody.innerHTML += row;
+            }
+
+            document.getElementById('finalResult').innerText = max_increment;
+            document.getElementById('outputArea').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
